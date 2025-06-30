@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Battery Log Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>📊 Battery Log</h1>
+
+    <form action="/add" method="post">
+        <label>Project Name:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>Battery Level (V):</label><br>
+        <input type="number" name="battery" step="0.01" required><br><br>
+
+        <button type="submit">➕ Add Log</button>
+    </form>
+
+    <hr>
+
+    <h2>📝 Log Entries:</h2>
+    <ul>
+        {% for line in logs %}
+        <li>{{ line }}</li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        setTimeout(function() {
+            window.location.reload();
+        }, 5000); // Refresh every 5 seconds
+    </script>
+
+
+</body>
+</html>
