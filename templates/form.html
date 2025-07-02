@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Battery Log Form</title>
+    <title>Battery Log Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>📊 Battery Log</h1>
 
-    <form action="/add" method="post">
+    <!-- 🔌 Form -->
+     <form action="/add" method="post">
         <label>Project Name:</label><br>
         <input type="text" name="name" required><br><br>
 
@@ -17,21 +18,54 @@
         <button type="submit">➕ Add Log</button>
     </form>
 
-    <hr>
+    <!-- 📈 Battery Voltage Chart -->
+    <h2>📈 Battery Voltage Chart</h2>
+    <canvas id="voltageChart" width="400" height="150"></canvas>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+          
+   
+        const ctx = document.getElementById('voltageChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ timestamps | tojson}},
+                datasets: [{
+                    label: 'Battery Voltage (V)',
+                    data: {{ voltages | tojson}},
+                    borderColor: 'green',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        min: 2.5,
+                        max: 4.5
+                    }
+                }
+            }
+        });
+     });
+    </script>
+
+    <!-- 🔄 Auto-refresh every 10 seconds -->
+    <script>
+        setTimeout(function () {
+            window.location.reload();
+        }, 10000);
+    </script>
+
+     <!-- 📝 Log Entries -->
     <h2>📝 Log Entries:</h2>
     <ul>
         {% for line in logs %}
-        <li>{{ line }}</li>
+            <li>{{ line }}</li>
         {% endfor %}
     </ul>
-
-    <script>
-        setTimeout(function() {
-            window.location.reload();
-        }, 5000); // Refresh every 5 seconds
-    </script>
-
-
 </body>
 </html>
