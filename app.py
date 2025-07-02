@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, jsonify  # type: ignore
 import os
 
+API_KEY = "newnss-secret-key-with-flask-2025"
+
 app = Flask(__name__)
 
 @app.route('/')

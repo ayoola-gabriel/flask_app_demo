@@ -3,8 +3,8 @@ import time
 import random
 from datetime import datetime
 
-# url = "https://flask-app-demo-mgz7.onrender.com/api/logs"
-url = "http://127.0.0.1:5000/api/logs"  # Change to your local or remote URL
+url = "https://flask-app-demo-mgz7.onrender.com/api/logs"
+# url = "http://127.0.0.1:5000/api/logs"  # Change to your local or remote URL
 
 headers = {
     "Content-Type": "application/json",
