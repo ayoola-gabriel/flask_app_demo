@@ -83,6 +83,4 @@ def debug():
     return "<br>".join([f"{log.timestamp} — {log.project} — {log.voltage}V — {log.status}" for log in logs])
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
