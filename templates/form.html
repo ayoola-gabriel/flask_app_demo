@@ -38,7 +38,8 @@
                     borderColor: 'green',
                     borderWidth: 2,
                     tension: 0.3,
-                    fill: false
+                    fill: false,
+                    radius: 0
                 }]
             },
             options: {
@@ -54,17 +55,17 @@
     </script>
 
     <!-- 🔄 Auto-refresh every 10 seconds -->
-    <script>
+    <!-- <script>
         setTimeout(function () {
             window.location.reload();
         }, 10000);
-    </script>
+    </script> -->
 
      <!-- 📝 Log Entries -->
     <h2>📝 Log Entries:</h2>
     <ul>
         {% for log in logs %}
-            <li>{{ log.timestamp }} — {{ log.project }} — {{ log.voltage }}V — {{ log.status }}</li>
+            <li>{{ log.timestamps }} — {{ log.project }} — {{ log.voltage }}V — {{ log.status }}</li>
         {% endfor %}
     </ul>
 </body>
