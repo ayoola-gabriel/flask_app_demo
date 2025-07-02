@@ -1,50 +1,51 @@
 from flask import Flask, render_template, request, redirect, jsonify  # type: ignore
 import os
+from flask_sqlalchemy import SQLAlchemy  # type: ignore
+from datetime import datetime
+# from dotenv import load_dotenv  # type: ignore
 
 API_KEY = "newnss-secret-key-with-flask-2025"
 
 app = Flask(__name__)
 
+
+db_uri = os.getenv("DATABASE_URL", "sqlite:///local.db")
+
+
+if db_uri.startswith("postgres://"):
+    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+class BatteryLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    project = db.Column(db.String(100))
+    voltage = db.Column(db.Float)
+    status = db.Column(db.String(50))
+
+    def __repr__(self):
+        return f"<{self.project} {self.voltage}V"
+    
+# -------ROUTES-------
+@app.before_first_request
+def create_tables():
+    db.create_all()
+
 @app.route('/')
 def home():
-    if not os.path.exists('battery_log.txt'):
-        return render_template("form.html", logs=[], voltages=[], timestamps=[])
-
-    with open('battery_log.txt', 'r', encoding="utf-8") as file:
-        logs = file.readlines()
-
-    voltages = []
-    timestamps = []
-
-    for line in logs:
-        parts = line.split("--")
-        if len(parts) >= 2:
-            try:
-                voltage_str = parts[1].strip().replace("V", "")
-                voltage = float(voltage_str)
-                voltages.append(voltage)
-                timestamps.append(parts[0].strip())
-            except:
-                pass
-
+    logs = BatteryLog.query.order_by(BatteryLog.timestamp.desc()).all()
+    voltages = [log.voltage for log in logs][::-1]
+    timestamps = [log.timestamp.strftime("%H:%M:%S") for log in logs][::-1]
     return render_template("form.html", logs=logs, voltages=voltages, timestamps=timestamps)
 
 @app.route('/add', methods=['POST'])
-def add_log():
-    name = request.form["name"]
-    battery = float(request.form["battery"])
-
-    if battery > 3.7:
-        status = "🔋 Fully charged"
-    elif battery > 3.2:
-        status = "🟡 Battery ok"
-    else:
-        status = "⚠️ Battery low!"
-
-    with open('battery_log.txt', 'a', encoding="utf-8") as file:
-        file.write(f"{name} - {battery}V - {status} — ✅ Added from web\n")
-    
-    return redirect('/')
+def add_form():
+    return add_entry(request.form["name"],
+                     float(request.form["battery"]),
+                     source="Form")
 
 @app.route("/api/logs", methods=['POST'])
 def api_log():
@@ -55,23 +56,26 @@ def api_log():
 
 
     data = request.get_json()
-    name = data.get("name")
-    battery = float(data.get("battery"))
+    return add_entry(data["name"],
+                     float(data["battery"]),
+                     source="API")
 
-    # if not name or not isinstance(battery, (int, float)):
-    #     return jsonify({"error": "Invalid input"}), 400
+def add_entry(name, voltage, source):
+     status = ("🔋 Fully charged" if voltage > 3.7 else
+              "🟡 Battery ok"    if voltage > 3.2 else
+              "⚠️ Battery low!")
+     
+     db.session.add(BatteryLog(
+         project=name,
+         voltage=voltage,
+         status=status
+     ))
+     db.session.commit()
 
-    if battery > 3.7:
-        status = "🔋 Fully charged"
-    elif battery > 3.2:
-        status = "🟡 Battery ok"
-    else:
-        status = "⚠️ Battery low!"
-
-    with open('battery_log.txt', 'a', encoding="utf-8") as file:
-        file.write(f"{name} -- {battery}V -- {status} — ✅ Added from API\n")
-
-    return jsonify({"message": "Data received successfully"}), 200
+     if source == "API":
+          return jsonify({"message": "Saved"}), 200
+     
+     return redirect('/')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

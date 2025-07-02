@@ -31,10 +31,10 @@
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: {{ timestamps | tojson}},
+                labels: {{ timestamps | tojson | safe }},
                 datasets: [{
                     label: 'Battery Voltage (V)',
-                    data: {{ voltages | tojson}},
+                    data: {{ voltages | tojson | safe }},
                     borderColor: 'green',
                     borderWidth: 2,
                     tension: 0.3,
@@ -63,8 +63,8 @@
      <!-- 📝 Log Entries -->
     <h2>📝 Log Entries:</h2>
     <ul>
-        {% for line in logs %}
-            <li>{{ line }}</li>
+        {% for log in logs %}
+            <li>{{ log.timestamp }} — {{ log.project }} — {{ log.voltage }}V — {{ log.status }}</li>
         {% endfor %}
     </ul>
 </body>
