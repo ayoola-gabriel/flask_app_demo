@@ -1,2 +1,5 @@
 Flask==2.3.3
 gunicorn
+Flask‑SQLAlchemy
+psycopg2‑binary        # PostgreSQL driver
+python‑dotenv          # optional: local .env support
