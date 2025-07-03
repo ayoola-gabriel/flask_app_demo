@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, jsonify  # type: ignore
 import os
+import csv
+import io
 from flask_sqlalchemy import SQLAlchemy  # type: ignore
 from datetime import datetime
 # from dotenv import load_dotenv  # type: ignore
@@ -34,11 +36,23 @@ def create_tables():
     db.create_all()
 
 @app.route('/')
+@app.route("/")
 def home():
-    logs = BatteryLog.query.order_by(BatteryLog.timestamp.desc()).all()
-    voltages = [log.voltage for log in logs][::-1]
+    project = request.args.get("project")  # get ?project=XYZ from URL
+
+    if project:
+        logs = BatteryLog.query.filter_by(project=project).order_by(BatteryLog.timestamp.desc()).all()
+    else:
+        logs = BatteryLog.query.order_by(BatteryLog.timestamp.desc()).all()
+
+    voltages   = [log.voltage for log in logs][::-1]
     timestamps = [log.timestamp.strftime("%H:%M:%S") for log in logs][::-1]
-    return render_template("form.html", logs=logs, voltages=voltages, timestamps=timestamps)
+
+    all_projects = db.session.query(BatteryLog.project).distinct().all()
+    project_names = [p[0] for p in all_projects]
+
+    return render_template("form.html", logs=logs, voltages=voltages,
+                           timestamps=timestamps, project_names=project_names, selected=project)
 
 @app.route('/add', methods=['POST'])
 def add_form():
@@ -81,6 +95,36 @@ def add_entry(name, voltage, source):
 def debug():
     logs = BatteryLog.query.order_by(BatteryLog.timestamp.desc()).all()
     return "<br>".join([f"{log.timestamp} — {log.project} — {log.voltage}V — {log.status}" for log in logs])
+
+@app.route("/export")
+def export_logs():
+    project = request.args.get("project")
+
+    if project:
+        logs = BatteryLog.query.filter_by(project=project).order_by(BatteryLog.timestamp.desc()).all()
+    else:
+        logs = BatteryLog.query.order_by(BatteryLog.timestamp.desc()).all()
+
+    #create in-memory CSV file
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Timestamp", "Project", "Voltage (V)", "Status"])
+
+    for log in logs:
+        writer.writerow([
+            log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            log.project,
+            log.voltage,
+            log.status
+        ])
+
+    #return as downloadable response
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=battery_logs.csv"
+    response.headers["Content-Type"] = "text/csv"
+    return response
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
