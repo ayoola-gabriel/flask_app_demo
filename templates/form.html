@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Battery Log Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <h1>📊 Battery Log</h1>
 
     <!-- 🔌 Form -->
-     <form action="/add" method="post">
+    <form action="/add" method="post">
         <label>Project Name:</label><br>
         <input type="text" name="name" required><br><br>
 
@@ -18,38 +20,56 @@
         <button type="submit">➕ Add Log</button>
     </form>
 
+    <form method="get" action="/">
+        <label for="project">Filter by Project:</label>
+        <select name="project" onchange="this.form.submit()">
+            <option value="">All Projects</option>
+            {% for name in project_names %}
+            <option value="{{ name }}" {% if name==selected %}selected{% endif %}>
+                {{ name }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <a href="/export{% if selected %}?project={{ selected }}{% endif %}">
+        <button type="button">⬇️ Export as CSV</button>
+    </a>
+
+
+
     <!-- 📈 Battery Voltage Chart -->
     <h2>📈 Battery Voltage Chart</h2>
     <canvas id="voltageChart" width="400" height="150"></canvas>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', function() {
-          
-   
-        const ctx = document.getElementById('voltageChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ timestamps | tojson | safe }},
-                datasets: [{
-                    label: 'Battery Voltage (V)',
-                    data: {{ voltages | tojson | safe }},
-                    borderColor: 'green',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: false,
-                    radius: 0
+        window.addEventListener('DOMContentLoaded', function () {
+
+
+            const ctx = document.getElementById('voltageChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ timestamps | tojson | safe }},
+            datasets: [{
+                label: 'Battery Voltage (V)',
+                data: {{ voltages | tojson | safe }},
+            borderColor: 'green',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false,
+            radius: 0
                 }]
             },
             options: {
-                scales: {
-                    y: {
-                        min: 2.5,
-                        max: 4.5
-                    }
+            scales: {
+                y: {
+                    min: 2.5,
+                    max: 4.5
                 }
             }
+        }
         });
      });
     </script>
@@ -61,12 +81,13 @@
         }, 10000);
     </script> -->
 
-     <!-- 📝 Log Entries -->
+    <!-- 📝 Log Entries -->
     <h2>📝 Log Entries:</h2>
     <ul>
         {% for log in logs %}
-            <li>{{ log.timestamps }} — {{ log.project }} — {{ log.voltage }}V — {{ log.status }}</li>
+        <li>{{ log.timestamps }} — {{ log.project }} — {{ log.voltage }}V — {{ log.status }}</li>
         {% endfor %}
     </ul>
 </body>
+
 </html>
